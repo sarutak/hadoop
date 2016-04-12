@@ -17,11 +17,23 @@
  */
 package org.apache.hadoop.fs;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
+
+import jline.console.ConsoleReader;
+import jline.console.completer.Completer;
+import jline.console.history.FileHistory;
+import jline.console.history.History;
+import jline.console.history.PersistentHistory;
+import jline.console.completer.StringsCompleter;
+import jline.console.completer.ArgumentCompleter;
+import jline.console.completer.ArgumentCompleter.ArgumentDelimiter;
+import jline.console.completer.ArgumentCompleter.AbstractArgumentDelimiter;
 
 import org.apache.commons.lang.WordUtils;
 import org.apache.commons.logging.Log;
@@ -50,6 +62,7 @@ public class FsShell extends Configured implements Tool {
 
   private FileSystem fs;
   private Trash trash;
+  private ConsoleReader reader;
   protected CommandFactory commandFactory;
 
   private final String usagePrefix =
@@ -96,6 +109,7 @@ public class FsShell extends Configured implements Tool {
       commandFactory = new CommandFactory(getConf());
       commandFactory.addObject(new Help(), "-help");
       commandFactory.addObject(new Usage(), "-usage");
+      commandFactory.addObject(new InteractiveShell(), "-interactive");
       registerCommands(commandFactory);
     }
     this.tracer = new Tracer.Builder("FsShell").
@@ -175,6 +189,13 @@ public class FsShell extends Configured implements Tool {
       } else {
         for (String arg : args) printHelp(System.out, arg);
       }
+    }
+  }
+
+  protected class InteractiveShell extends FsCommand {
+    @Override
+    protected void processRawArguments(LinkedList<String> args) {
+      System.out.println("OK");
     }
   }
 
@@ -287,6 +308,71 @@ public class FsShell extends Configured implements Tool {
   private TableListing createOptionTableListing() {
     return new TableListing.Builder().addField("").addField("", true)
         .wrapWidth(MAX_LINE_WIDTH).build();
+  }
+
+  private Completer[] getCommandCompleter() {
+    // StringCompleter matches against a pre-defined wordlist
+    // We start with an empty wordlist and build it up
+    List<String> candidateStrings = new ArrayList<>();
+            //Arrays.asList(commandFactory.getNames());
+    for (String command : commandFactory.getNames()) {
+      if (!command.equals("-i")) {
+        candidateStrings.add(command);
+      }
+    }
+
+    StringsCompleter strCompleter = new StringsCompleter(candidateStrings);
+
+    final ArgumentCompleter arguCompleter = new ArgumentCompleter(strCompleter);
+    arguCompleter.setStrict(false);
+
+    return new Completer[]{strCompleter};
+  }
+
+  private void setupCmdHistory() {
+    final String HISTORYFILE = ".dfsshellhistory";
+    final String historyDir = System.getProperty("user.home");
+    PersistentHistory history = null;
+
+    try {
+      if ((new File(historyDir)).exists()) {
+        String historyFile = historyDir + File.separator + HISTORYFILE;
+        history = new FileHistory(new File(historyFile));
+        reader.setHistory(history);
+      } else {
+        System.err.println("WARNING: Directory for history file: " + historyDir +
+                           " does not exist. History will not be available during this session.");
+      }
+    } catch (Exception e) {
+      System.err.println("WARNING: Encountered an error while trying to initialize history file." +
+                         " History will not be available during this session.");
+      System.err.println(e.getMessage());
+    }
+
+    // add shutdown hook to flush the history to history file
+    Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+      @Override
+      public void run() {
+        History h = reader.getHistory();
+        if (h instanceof FileHistory) {
+          try {
+            ((FileHistory)h).flush();
+          } catch (IOException e) {
+            System.err.println("WARNING: Failed to write command history file: " + e.getMessage());
+          }
+        }
+      }
+    }));
+  }
+
+  private void setupConsoleReader() throws IOException {
+    reader = new ConsoleReader();
+    reader.setExpandEvents(false);
+    reader.setBellEnabled(false);
+    for (Completer completer : getCommandCompleter()) {
+      reader.addCompleter(completer);
+    }
+    setupCmdHistory();
   }
 
   /**

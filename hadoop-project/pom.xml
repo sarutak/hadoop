@@ -85,6 +85,8 @@
 
     <tomcat.version>6.0.44</tomcat.version>
 
+    <jline.version>2.12</jline.version>
+
     <!-- define the Java language version used by the compiler -->
     <javac.version>1.7</javac.version>
 
@@ -992,24 +994,30 @@
        <scope>test</scope>
      </dependency>
       
-      <dependency>
-          <groupId>com.nimbusds</groupId>
-          <artifactId>nimbus-jose-jwt</artifactId>
-          <version>3.9</version>
-          <scope>compile</scope>
-          <exclusions>
-          <exclusion>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
+     <dependency>
+       <groupId>com.nimbusds</groupId>
+       <artifactId>nimbus-jose-jwt</artifactId>
+       <version>3.9</version>
+       <scope>compile</scope>
+       <exclusions>
+         <exclusion>
+           <groupId>org.bouncycastle</groupId>
+           <artifactId>bcprov-jdk15on</artifactId>
+         </exclusion>
+       </exclusions>
+     </dependency>
 
-        <dependency>
-            <groupId>org.skyscreamer</groupId>
-            <artifactId>jsonassert</artifactId>
-            <version>1.3.0</version>
-        </dependency>
+     <dependency>
+       <groupId>org.skyscreamer</groupId>
+       <artifactId>jsonassert</artifactId>
+       <version>1.3.0</version>
+     </dependency>
+
+    <dependency>
+      <groupId>jline</groupId>
+      <artifactId>jline</artifactId>
+      <version>${jline.version}</version>
+    </dependency>
 
     </dependencies>
   </dependencyManagement>

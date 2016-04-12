@@ -295,6 +295,11 @@
       <artifactId>bcprov-jdk16</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>jline</groupId>
+      <artifactId>jline</artifactId>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
 
   <build>

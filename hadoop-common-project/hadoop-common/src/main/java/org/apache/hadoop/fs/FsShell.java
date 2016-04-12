@@ -109,7 +109,6 @@ public class FsShell extends Configured implements Tool {
       commandFactory = new CommandFactory(getConf());
       commandFactory.addObject(new Help(), "-help");
       commandFactory.addObject(new Usage(), "-usage");
-      commandFactory.addObject(new InteractiveShell(), "-shell");
       registerCommands(commandFactory);
     }
     this.tracer = new Tracer.Builder("FsShell").
@@ -121,7 +120,7 @@ public class FsShell extends Configured implements Tool {
     // TODO: DFSAdmin subclasses FsShell so need to protect the command
     // registration.  This class should morph into a base class for
     // commands, and then this method can be abstract
-    if (this.getClass().equals(FsShell.class)) {
+    if (this.getClass().equals(FsShell.class)  || this.getClass().equals(FsInteractiveShell.class)) {
       factory.registerCommands(FsCommand.class);
     }
   }
@@ -146,7 +145,7 @@ public class FsShell extends Configured implements Tool {
   }
 
   protected String getUsagePrefix() {
-    return usagePrefix;
+    return usagePrefix + " ";
   }
 
   // NOTE: Usage/Help are inner classes to allow access to outer methods
@@ -189,107 +188,6 @@ public class FsShell extends Configured implements Tool {
       } else {
         for (String arg : args) printHelp(System.out, arg);
       }
-    }
-  }
-
-  protected class InteractiveShell extends FsCommand {
-    public static final String NAME = "shell";
-    public static final String USAGE = "TODO";
-    public static final String DESCRIPTION =
-      "TODO";
-    @Override
-    protected void processRawArguments(LinkedList<String> args) {
-      try {
-        setupConsoleReader();
-
-        String line;
-        int ret = 0;
-        String prefix = "";
-        String curPath = getFS().getHomeDirectory().toString();
-        String curPrompt = curPath;
-
-        while ((line = reader.readLine(curPrompt + "> ")) != null) {
-          if (!prefix.equals("")) {
-            prefix += '\n';
-          }
-          if (line.trim().startsWith("#")) {
-            continue;
-          }
-          String[] command = line.split("\\s+");
-          command[0] = "-" + command[0];
-          if (commandFactory.getInstance(command[0]) != null) {
-            FsShell.this.run(command);
-          }
-        }
-
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    }
-
-    private Completer[] getCommandCompleter() {
-      // StringCompleter matches against a pre-defined wordlist
-      // We start with an empty wordlist and build it up
-      List<String> candidateStrings = new ArrayList<>();
-      //Arrays.asList(commandFactory.getNames());
-      for (String command : commandFactory.getNames()) {
-        if (!command.equals("-shell")) {
-          candidateStrings.add(command);
-        }
-      }
-
-      StringsCompleter strCompleter = new StringsCompleter(candidateStrings);
-
-      final ArgumentCompleter arguCompleter = new ArgumentCompleter(strCompleter);
-      arguCompleter.setStrict(false);
-
-      return new Completer[]{strCompleter};
-    }
-
-    private void setupCmdHistory() {
-      final String HISTORYFILE = ".dfsshellhistory";
-      final String historyDir = System.getProperty("user.home");
-      PersistentHistory history = null;
-
-      try {
-        if ((new File(historyDir)).exists()) {
-          String historyFile = historyDir + File.separator + HISTORYFILE;
-          history = new FileHistory(new File(historyFile));
-          reader.setHistory(history);
-        } else {
-          System.err.println("WARNING: Directory for history file: " + historyDir +
-                  " does not exist. History will not be available during this session.");
-        }
-      } catch (Exception e) {
-        System.err.println("WARNING: Encountered an error while trying to initialize history file." +
-                " History will not be available during this session.");
-        System.err.println(e.getMessage());
-      }
-
-      // add shutdown hook to flush the history to history file
-      Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-        @Override
-        public void run() {
-          History h = reader.getHistory();
-          if (h instanceof FileHistory) {
-            try {
-              ((FileHistory)h).flush();
-            } catch (IOException e) {
-              System.err.println("WARNING: Failed to write command history file: " + e.getMessage());
-            }
-          }
-        }
-      }));
-    }
-
-    private void setupConsoleReader() throws IOException {
-      reader = new ConsoleReader();
-      reader.setExpandEvents(false);
-      reader.setBellEnabled(false);
-      for (Completer completer : getCommandCompleter()) {
-        reader.addCompleter(completer);
-      }
-      setupCmdHistory();
     }
   }
 
@@ -340,7 +238,7 @@ public class FsShell extends Configured implements Tool {
       for (String name : commandFactory.getNames()) {
         Command instance = commandFactory.getInstance(name);
         if (!instance.isDeprecated()) {
-          out.println("\t[" + instance.getUsage() + "]");
+          out.println("\t[" + makeUsageString(instance) + "]");
           instances.add(instance);
         }
       }
@@ -351,17 +249,23 @@ public class FsShell extends Configured implements Tool {
           printInstanceHelp(out, instance);
         }
       }
-      out.println();
-      ToolRunner.printGenericCommandUsage(out);
+      printAdditionalInfo(out);
+//      out.println();
+//      ToolRunner.printGenericCommandUsage(out);
     }
   }
 
+  protected void printAdditionalInfo(PrintStream out) {
+    out.println();
+    ToolRunner.printGenericCommandUsage(out);
+  }
+
   private void printInstanceUsage(PrintStream out, Command instance) {
-    out.println(getUsagePrefix() + " " + instance.getUsage());
+    out.println(getUsagePrefix() + makeUsageString(instance));
   }
 
   private void printInstanceHelp(PrintStream out, Command instance) {
-    out.println(instance.getUsage() + " :");
+    out.println(makeUsageString(instance) + " :");
     TableListing listing = null;
     final String prefix = "  ";
     for (String line : instance.getDescription().split("\n")) {
@@ -397,6 +301,11 @@ public class FsShell extends Configured implements Tool {
     }
   }
 
+  protected String makeUsageString(Command instance) {
+    String cmd = "-" + instance.getName();
+    return cmd + " " + instance.getUsage();
+  }
+
   // Creates a two-row table, the first row is for the command line option,
   // the second row is for the option description.
   private TableListing createOptionTableListing() {
@@ -411,6 +320,10 @@ public class FsShell extends Configured implements Tool {
   public int run(String argv[]) throws Exception {
     // initialize FsShell
     init();
+    return executeCommand(argv);
+  }
+
+  protected int executeCommand(String[] argv) {
     int exitCode = -1;
     if (argv.length < 1) {
       printUsage(System.err);

@@ -82,7 +82,7 @@ public class TestCommandFactory {
     assertNotNull(instance);
     assertEquals(TestCommand4.class, instance.getClass());    
     assertEquals("tc4", instance.getCommandName());
-    String usage = instance.getUsage();
+    String usage = instance.getName() + " " + instance.getUsage();
     assertEquals("-tc4 tc4_usage", usage);
     assertEquals("tc4_description", instance.getDescription());
   }

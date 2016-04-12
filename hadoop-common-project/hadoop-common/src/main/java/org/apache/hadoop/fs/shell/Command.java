@@ -450,9 +450,10 @@ abstract public class Command extends Configured {
    * @return "name options"
    */
   public String getUsage() {
-    String cmd = "-" + getName();
+    //String cmd = "-" + getName();
     String usage = isDeprecated() ? "" : getCommandField(COMMAND_USAGE_FIELD);
-    return usage.isEmpty() ? cmd : cmd + " " + usage; 
+    //return usage.isEmpty() ? cmd : cmd + " " + usage;
+    return usage.isEmpty() ? "" : usage;
   }
 
   /**

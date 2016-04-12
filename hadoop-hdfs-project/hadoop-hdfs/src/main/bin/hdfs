@@ -130,6 +130,11 @@ case ${COMMAND} in
     hadoop_debug "Appending HADOOP_CLIENT_OPTS onto HADOOP_OPTS"
     HADOOP_OPTS="${HADOOP_OPTS} ${HADOOP_CLIENT_OPTS}"
   ;;
+  dfsishell)
+    CLASS=org.apache.hadoop.fs.FsInteractiveShell
+    hadoop_debug "Appending HADOOP_CLIENT_OPTS onto HADOOP_OPTS"
+    HADOOP_OPTS="${HADOOP_OPTS} ${HADOOP_CLIENT_OPTS}"
+  ;;
   dfsadmin)
     CLASS=org.apache.hadoop.hdfs.tools.DFSAdmin
     hadoop_debug "Appending HADOOP_CLIENT_OPTS onto HADOOP_OPTS"

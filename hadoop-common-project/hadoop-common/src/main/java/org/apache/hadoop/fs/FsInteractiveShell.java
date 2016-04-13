@@ -128,7 +128,8 @@ public class FsInteractiveShell extends FsShell {
           List<String> pathList = new ArrayList<>();
 
           for (FileStatus status : statuses) {
-            pathList.add(status.getPath().toUri().getPath());
+            String postFix= status.isDirectory() ? "/" : "";
+            pathList.add(status.getPath().toUri().getPath() + postFix);
           }
 
           StringsCompleter pathCompleter = new StringsCompleter(pathList);
@@ -139,12 +140,12 @@ public class FsInteractiveShell extends FsShell {
 //            System.out.println(p);
 //            System.out.println(getFS().isDirectory(new Path(p)));
 //            if (getFS().getFileStatus(new Path(p)).isDirectory()) {
-            if (getFS().isDirectory(new Path(p))) {
+//            if (getFS().isDirectory(new Path(p))) {
 //              clist.set(0, p.trim() + "/");
-              clist.set(0, p.trim() );
-            } else {
-              clist.set(0, p.trim());
-            }
+            clist.set(0, p.trim() );
+//            } else {
+  //            clist.set(0, p.trim());
+//            }
           }
 
         } catch (IOException e) {

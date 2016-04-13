@@ -57,16 +57,19 @@ public class FsInteractiveShell extends FsShell {
       String curPath = getFS().getHomeDirectory().toString();
       String curPrompt = curPath;
 
-      while ((line = reader.readLine(curPrompt + "> ")) != null) {
+      while ((line = reader.readLine(curPrompt + "> ").trim()) != null) {
         if (!prefix.equals("")) {
           prefix += '\n';
         }
-        if (line.trim().startsWith("#")) {
+        if (line.startsWith("#")) {
+          continue;
+        } else if (line.isEmpty()) {
           continue;
         }
         String[] command = line.split("\\s+");
-        command[0] = "-" + command[0];
-        if (commandFactory.getInstance(command[0]) != null) {
+        String commandWithHyphen = "-" + command[0];
+        if (commandFactory.getInstance(commandWithHyphen) != null) {
+          command[0] = commandWithHyphen;
           ret = super.run(command);
         } else {
           System.err.println(command[0] + ": command not found");
@@ -97,17 +100,66 @@ public class FsInteractiveShell extends FsShell {
     List<String> candidateStrings = new ArrayList<>();
     for (String command : commandFactory.getNames()) {
       if (!command.equals("-shell")) {
+        if (command.startsWith("-")) {
+          command = command.substring(1);
+        }
         candidateStrings.add(command);
       }
     }
 
-    StringsCompleter strCompleter = new StringsCompleter(candidateStrings);
+    final StringsCompleter strCompleter = new StringsCompleter(candidateStrings);
 
-    final ArgumentCompleter arguCompleter = new ArgumentCompleter(strCompleter);
-    arguCompleter.setStrict(false);
+    Completer customCompleter = new StringsCompleter() {
+      @Override
+      public int complete(String buffer, int cursor, List<CharSequence> clist) {
 
-    return new Completer[]{strCompleter};
-    }
+        int ret = 0;
+        if (buffer == null) {
+          return 0;
+        }
+        String currentPath;
+        if (buffer.startsWith("/")) {
+          currentPath = buffer.substring(0, buffer.lastIndexOf("/") + 1);
+        } else {
+          currentPath = "/"; // TODO
+        }
+        try {
+          FileStatus[] statuses = getFS().listStatus(new Path(currentPath));
+          List<String> pathList = new ArrayList<>();
+
+          for (FileStatus status : statuses) {
+            pathList.add(status.getPath().toUri().getPath());
+          }
+
+          StringsCompleter pathCompleter = new StringsCompleter(pathList);
+          pathCompleter.complete(buffer, cursor, clist);
+
+          if (clist.size() == 1) {
+            String p = (String)clist.get(0);
+//            System.out.println(p);
+//            System.out.println(getFS().isDirectory(new Path(p)));
+//            if (getFS().getFileStatus(new Path(p)).isDirectory()) {
+            if (getFS().isDirectory(new Path(p))) {
+//              clist.set(0, p.trim() + "/");
+              clist.set(0, p.trim() );
+            } else {
+              clist.set(0, p.trim());
+            }
+          }
+
+        } catch (IOException e) {
+//          e.printStackTrace();
+          // TODO
+        }
+
+        return ret;
+      }
+    };
+
+    final ArgumentCompleter argCompleter = new ArgumentCompleter(strCompleter, customCompleter);
+
+    return new Completer[] {argCompleter};
+  }
 
   private void setupCmdHistory() {
     final String HISTORYFILE = ".dfsshellhistory";

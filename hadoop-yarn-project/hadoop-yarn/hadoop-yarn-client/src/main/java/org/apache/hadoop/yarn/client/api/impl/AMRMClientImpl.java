@@ -692,23 +692,25 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
     Preconditions.checkArgument(priority != null,
         "The priority at which to request containers should not be null ");
     List<LinkedHashSet<T>> list = new LinkedList<LinkedHashSet<T>>();
-
     RemoteRequestsTable remoteRequestsTable = getTable(0);
-    List<ResourceRequestInfo<T>> matchingRequests =
-        remoteRequestsTable.getMatchingRequests(priority, resourceName,
-            executionType, capability);
-    // If no exact match. Container may be larger than what was requested.
-    // get all resources <= capability. map is reverse sorted.
-    for (ResourceRequestInfo<T> resReqInfo : matchingRequests) {
-      if (canFit(resReqInfo.remoteRequest.getCapability(), capability) &&
-        !resReqInfo.containerRequests.isEmpty()) {
-        list.add(resReqInfo.containerRequests);
+
+    if (remoteRequestsTable != null) {
+      List<ResourceRequestInfo<T>> matchingRequests =
+          remoteRequestsTable.getMatchingRequests(priority, resourceName,
+              executionType, capability);
+      // If no exact match. Container may be larger than what was requested.
+      // get all resources <= capability. map is reverse sorted.
+      for (ResourceRequestInfo<T> resReqInfo : matchingRequests) {
+        if (canFit(resReqInfo.remoteRequest.getCapability(), capability) &&
+          !resReqInfo.containerRequests.isEmpty()) {
+          list.add(resReqInfo.containerRequests);
+        }
       }
     }
     // no match found
     return list;          
   }
-  
+
   private Set<String> resolveRacks(List<String> nodes) {
     Set<String> racks = new HashSet<String>();    
     if (nodes != null) {

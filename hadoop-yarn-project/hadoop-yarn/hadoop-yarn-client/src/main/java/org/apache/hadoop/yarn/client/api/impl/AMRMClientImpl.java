@@ -691,7 +691,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
         "The Resource to be requested should not be null ");
     Preconditions.checkArgument(priority != null,
         "The priority at which to request containers should not be null ");
-    List<LinkedHashSet<T>> list = new LinkedList<LinkedHashSet<>();
+    List<LinkedHashSet<T>> list = new LinkedList<>();
     RemoteRequestsTable remoteRequestsTable = getTable(0);
 
     if (remoteRequestsTable != null) {

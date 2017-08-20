@@ -1869,6 +1869,25 @@ public class TestAMRMClient {
     }
   }
 
+  @Test (timeout=60000)
+  public void testGetMatchingRequestBeforeContainerRequest()
+      throws YarnException, IOException {
+    AMRMClient<ContainerRequest> amClient = null;
+
+    // start am rm client
+    amClient = AMRMClient.<ContainerRequest>createAMRMClient();
+    amClient.init(conf);
+    amClient.start();
+    amClient.registerApplicationMaster("Host", 10000, "");
+
+    // query matching request before container request.
+    List<? extends Collection<ContainerRequest>> matches;
+    Resource testCapability1 = Resource.newInstance(1024,  2);
+    matches = amClient.getMatchingRequests(priority, node, testCapability1);
+
+     assertTrue(matches.isEmpty());
+  }
+
   @SuppressWarnings("unchecked")
   private org.apache.hadoop.security.token.Token<AMRMTokenIdentifier>
       getAMRMToken() throws IOException {

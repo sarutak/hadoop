@@ -88,7 +88,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
   private static final Log LOG = LogFactory.getLog(AMRMClientImpl.class);
   private static final List<String> ANY_LIST =
       Collections.singletonList(ResourceRequest.ANY);
-  
+
   private int lastResponseId = 0;
 
   protected String appHostName;
@@ -98,18 +98,18 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
   protected ApplicationMasterProtocol rmClient;
   protected Resource clusterAvailableResources;
   protected int clusterNodeCount;
-  
+
   // blacklistedNodes is required for keeping history of blacklisted nodes that
   // are sent to RM. On RESYNC command from RM, blacklistedNodes are used to get
   // current blacklisted nodes and send back to RM.
   protected final Set<String> blacklistedNodes = new HashSet<String>();
   protected final Set<String> blacklistAdditions = new HashSet<String>();
   protected final Set<String> blacklistRemovals = new HashSet<String>();
-  
+
   static class ResourceRequestInfo<T> {
     ResourceRequest remoteRequest;
     LinkedHashSet<T> containerRequests;
-    
+
     ResourceRequestInfo(Long allocationRequestId, Priority priority,
         String resourceName, Resource capability, boolean relaxLocality) {
       remoteRequest = ResourceRequest.newBuilder().priority(priority)
@@ -153,7 +153,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
     long mem1 = arg1.getMemorySize();
     long cpu0 = arg0.getVirtualCores();
     long cpu1 = arg1.getVirtualCores();
-    
+
     return (mem0 <= mem1 && cpu0 <= cpu1);
   }
 
@@ -217,7 +217,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
     }
     super.serviceStop();
   }
-  
+
   @Override
   public RegisterApplicationMasterResponse registerApplicationMaster(
       String appHostName, int appHostPort, String appTrackingUrl)
@@ -276,7 +276,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
 
         blacklistToAdd.addAll(blacklistAdditions);
         blacklistToRemove.addAll(blacklistRemovals);
-        
+
         ResourceBlacklistRequest blacklistRequest =
             ResourceBlacklistRequest.newInstance(blacklistToAdd,
                 blacklistToRemove);
@@ -500,7 +500,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
       unregisterApplicationMaster(appStatus, appMessage, appTrackingUrl);
     }
   }
-  
+
   @Override
   public synchronized void addContainerRequest(T req) {
     Preconditions.checkArgument(req != null,
@@ -644,12 +644,12 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
     release.add(containerId);
     pendingChange.remove(containerId);
   }
-  
+
   @Override
   public synchronized Resource getAvailableResources() {
     return clusterAvailableResources;
   }
-  
+
   @Override
   public synchronized int getClusterNodeCount() {
     return clusterNodeCount;
@@ -725,7 +725,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
         }
       }
     }
-    
+
     return racks;
   }
 
@@ -756,7 +756,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
       }
     }
   }
-  
+
   /**
    * Valid if a node label expression specified on container request is valid or
    * not
@@ -765,7 +765,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
    */
   private void checkNodeLabelExpression(T containerRequest) {
     String exp = containerRequest.getNodeLabelExpression();
-    
+
     if (null == exp || exp.isEmpty()) {
       return;
     }
@@ -908,7 +908,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
   @Override
   public synchronized void updateBlacklist(List<String> blacklistAdditions,
       List<String> blacklistRemovals) {
-    
+
     if (blacklistAdditions != null) {
       this.blacklistAdditions.addAll(blacklistAdditions);
       this.blacklistedNodes.addAll(blacklistAdditions);
@@ -916,7 +916,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
       // should remove them here.
       this.blacklistRemovals.removeAll(blacklistAdditions);
     }
-    
+
     if (blacklistRemovals != null) {
       this.blacklistRemovals.addAll(blacklistRemovals);
       this.blacklistedNodes.removeAll(blacklistRemovals);
@@ -924,7 +924,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
       // them here.
       this.blacklistAdditions.removeAll(blacklistRemovals);
     }
-    
+
     if (blacklistAdditions != null && blacklistRemovals != null
         && blacklistAdditions.removeAll(blacklistRemovals)) {
       // we allow resources to appear in addition list and removal list in the

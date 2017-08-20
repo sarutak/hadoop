@@ -102,9 +102,9 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
   // blacklistedNodes is required for keeping history of blacklisted nodes that
   // are sent to RM. On RESYNC command from RM, blacklistedNodes are used to get
   // current blacklisted nodes and send back to RM.
-  protected final Set<String> blacklistedNodes = new HashSet<String>();
-  protected final Set<String> blacklistAdditions = new HashSet<String>();
-  protected final Set<String> blacklistRemovals = new HashSet<String>();
+  protected final Set<String> blacklistedNodes = new HashSet<>();
+  protected final Set<String> blacklistAdditions = new HashSet<>();
+  protected final Set<String> blacklistRemovals = new HashSet<>();
 
   static class ResourceRequestInfo<T> {
     ResourceRequest remoteRequest;
@@ -116,7 +116,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
           .resourceName(resourceName).capability(capability).numContainers(0)
           .allocationRequestId(allocationRequestId)
           .relaxLocality(relaxLocality).build();
-      containerRequests = new LinkedHashSet<T>();
+      containerRequests = new LinkedHashSet<>();
     }
   }
 
@@ -141,11 +141,11 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
         }
         return -1;
       }
-      if(mem0 < mem1) { 
+      if(mem0 < mem1) {
         return 1;
       }
       return -1;
-    }    
+    }
   }
 
   static boolean canFit(Resource arg0, Resource arg1) {
@@ -160,13 +160,13 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
   private final Map<Long, RemoteRequestsTable<T>> remoteRequests =
       new HashMap<>();
 
-  protected final Set<ResourceRequest> ask = new TreeSet<ResourceRequest>(
+  protected final Set<ResourceRequest> ask = new TreeSet<>(
       new org.apache.hadoop.yarn.api.records.ResourceRequest.ResourceRequestComparator());
-  protected final Set<ContainerId> release = new TreeSet<ContainerId>();
+  protected final Set<ContainerId> release = new TreeSet<>();
   // pendingRelease holds history of release requests.
   // request is removed only if RM sends completedContainer.
   // How it different from release? --> release is for per allocate() request.
-  protected Set<ContainerId> pendingRelease = new TreeSet<ContainerId>();
+  protected Set<ContainerId> pendingRelease = new TreeSet<>();
   // change map holds container resource change requests between two allocate()
   // calls, and are cleared after each successful allocate() call.
   protected final Map<ContainerId,
@@ -250,7 +250,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
   }
 
   @Override
-  public AllocateResponse allocate(float progressIndicator) 
+  public AllocateResponse allocate(float progressIndicator)
       throws YarnException, IOException {
     Preconditions.checkArgument(progressIndicator >= 0,
         "Progress indicator should not be negative");
@@ -258,8 +258,8 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
     List<ResourceRequest> askList = null;
     List<ContainerId> releaseList = null;
     AllocateRequest allocateRequest = null;
-    List<String> blacklistToAdd = new ArrayList<String>();
-    List<String> blacklistToRemove = new ArrayList<String>();
+    List<String> blacklistToAdd = new ArrayList<>();
+    List<String> blacklistToRemove = new ArrayList<>();
     Map<ContainerId, SimpleEntry<Container, UpdateContainerRequest>> oldChange =
         new HashMap<>();
     try {
@@ -268,7 +268,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
         // Save the current change for recovery
         oldChange.putAll(change);
         List<UpdateContainerRequest> updateList = createUpdateList();
-        releaseList = new ArrayList<ContainerId>(release);
+        releaseList = new ArrayList<>(release);
         // optimistically clear this collection assuming no RPC failure
         ask.clear();
         release.clear();
@@ -413,7 +413,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
   }
 
   private List<ResourceRequest> cloneAsks() {
-    List<ResourceRequest> askList = new ArrayList<ResourceRequest>(ask.size());
+    List<ResourceRequest> askList = new ArrayList<>(ask.size());
     for(ResourceRequest r : ask) {
       // create a copy of ResourceRequest as we might change it while the
       // RPC layer is using it to send info across
@@ -505,7 +505,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
   public synchronized void addContainerRequest(T req) {
     Preconditions.checkArgument(req != null,
         "Resource request can not be null.");
-    Set<String> dedupedRacks = new HashSet<String>();
+    Set<String> dedupedRacks = new HashSet<>();
     if (req.getRacks() != null) {
       dedupedRacks.addAll(req.getRacks());
       if(req.getRacks().size() != dedupedRacks.size()) {
@@ -521,8 +521,8 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
     // priority
     checkLocalityRelaxationConflict(req.getAllocationRequestId(),
         req.getPriority(), ANY_LIST, req.getRelaxLocality());
-    // check that specific rack cannot be mixed with specific node within a 
-    // priority. If node and its rack are both specified then they must be 
+    // check that specific rack cannot be mixed with specific node within a
+    // priority. If node and its rack are both specified then they must be
     // in the same request.
     // For explicitly requested racks, we set locality relaxation to true
     checkLocalityRelaxationConflict(req.getAllocationRequestId(),
@@ -533,11 +533,11 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
     checkNodeLabelExpression(req);
 
     if (req.getNodes() != null) {
-      HashSet<String> dedupedNodes = new HashSet<String>(req.getNodes());
+      HashSet<String> dedupedNodes = new HashSet<>(req.getNodes());
       if(dedupedNodes.size() != req.getNodes().size()) {
         Joiner joiner = Joiner.on(',');
         LOG.warn("ContainerRequest has duplicate nodes: "
-            + joiner.join(req.getNodes()));        
+            + joiner.join(req.getNodes()));
       }
       for (String node : dedupedNodes) {
         addResourceRequest(req.getPriority(), node,
@@ -568,7 +568,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
   public synchronized void removeContainerRequest(T req) {
     Preconditions.checkArgument(req != null,
         "Resource request can not be null.");
-    Set<String> allRacks = new HashSet<String>();
+    Set<String> allRacks = new HashSet<>();
     if (req.getRacks() != null) {
       allRacks.addAll(req.getRacks());
     }
@@ -576,7 +576,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
 
     // Update resource requests
     if (req.getNodes() != null) {
-      for (String node : new HashSet<String>(req.getNodes())) {
+      for (String node : new HashSet<>(req.getNodes())) {
         decResourceRequest(req.getPriority(), node,
             req.getExecutionTypeRequest(), req.getCapability(), req);
       }
@@ -691,7 +691,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
         "The Resource to be requested should not be null ");
     Preconditions.checkArgument(priority != null,
         "The priority at which to request containers should not be null ");
-    List<LinkedHashSet<T>> list = new LinkedList<LinkedHashSet<T>>();
+    List<LinkedHashSet<T>> list = new LinkedList<LinkedHashSet<>();
     RemoteRequestsTable remoteRequestsTable = getTable(0);
 
     if (remoteRequestsTable != null) {
@@ -708,11 +708,11 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
       }
     }
     // no match found
-    return list;          
+    return list;
   }
 
   private Set<String> resolveRacks(List<String> nodes) {
-    Set<String> racks = new HashSet<String>();    
+    Set<String> racks = new HashSet<>();
     if (nodes != null) {
       for (String node : nodes) {
         // Ensure node requests are accompanied by requests for
@@ -760,7 +760,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
   /**
    * Valid if a node label expression specified on container request is valid or
    * not
-   * 
+   *
    * @param containerRequest
    */
   private void checkNodeLabelExpression(T containerRequest) {
@@ -827,13 +827,13 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
 
   private void addResourceRequestToAsk(ResourceRequest remoteRequest) {
     // This code looks weird but is needed because of the following scenario.
-    // A ResourceRequest is removed from the remoteRequestTable. A 0 container 
+    // A ResourceRequest is removed from the remoteRequestTable. A 0 container
     // request is added to 'ask' to notify the RM about not needing it any more.
-    // Before the call to allocate, the user now requests more containers. If 
+    // Before the call to allocate, the user now requests more containers. If
     // the locations of the 0 size request and the new request are the same
     // (with the difference being only container count), then the set comparator
-    // will consider both to be the same and not add the new request to ask. So 
-    // we need to check for the "same" request being present and remove it and 
+    // will consider both to be the same and not add the new request to ask. So
+    // we need to check for the "same" request being present and remove it and
     // then add it back. The comparator is container count agnostic.
     // This should happen only rarely but we do need to guard against it.
     if(ask.contains(remoteRequest)) {
@@ -848,7 +848,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
     RemoteRequestsTable<T> remoteRequestsTable =
         getTable(req.getAllocationRequestId());
     if (remoteRequestsTable == null) {
-      remoteRequestsTable = new RemoteRequestsTable<T>();
+      remoteRequestsTable = new RemoteRequestsTable<>();
       putTable(req.getAllocationRequestId(), remoteRequestsTable);
     }
     @SuppressWarnings("unchecked")
@@ -864,7 +864,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
       LOG.debug("addResourceRequest:" + " applicationId="
           + " priority=" + priority.getPriority()
           + " resourceName=" + resourceName + " numContainers="
-          + resourceRequestInfo.remoteRequest.getNumContainers() 
+          + resourceRequestInfo.remoteRequest.getNumContainers()
           + " #asks=" + ask.size());
     }
   }
@@ -912,7 +912,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
     if (blacklistAdditions != null) {
       this.blacklistAdditions.addAll(blacklistAdditions);
       this.blacklistedNodes.addAll(blacklistAdditions);
-      // if some resources are also in blacklistRemovals updated before, we 
+      // if some resources are also in blacklistRemovals updated before, we
       // should remove them here.
       this.blacklistRemovals.removeAll(blacklistAdditions);
     }
@@ -936,7 +936,7 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
 
   private void updateAMRMToken(Token token) throws IOException {
     org.apache.hadoop.security.token.Token<AMRMTokenIdentifier> amrmToken =
-        new org.apache.hadoop.security.token.Token<AMRMTokenIdentifier>(token
+        new org.apache.hadoop.security.token.Token<>(token
           .getIdentifier().array(), token.getPassword().array(), new Text(
           token.getKind()), new Text(token.getService()));
     // Preserve the token service sent by the RM when adding the token
